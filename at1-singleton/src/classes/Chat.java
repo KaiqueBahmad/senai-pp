@@ -9,6 +9,10 @@ public class Chat {
 		return Chat.instance;
 	}
 	
+	private Chat() {
+		
+	}
+	
 	private List<Usuario> usuarios = new LinkedList<>();
 	private List<Mensagem> mensagems = new LinkedList<>();
 	public List<Mensagem> getMensagems() {
