@@ -38,7 +38,8 @@ public class Andar {
 	}
 
 	public void chamarElevador() {
-		
+		Elevador elevador = Elevador.getInstance();
+		elevador.addAndarChamando(this);
 		
 	}
 	

@@ -17,9 +17,7 @@ public class Predio {
 		return instance;
 	}
 	
-	public static void setup(int numAndares) {
-		getInstance();
-
+	public void setup(int numAndares) {
 		if (instance.lastNumAndares > numAndares) {
 			System.out.println("Não é possível diminuir o número de andares!");
 			return;
