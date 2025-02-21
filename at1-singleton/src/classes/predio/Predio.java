@@ -9,6 +9,10 @@ public class Predio {
 	private Map<Integer, Andar> andares = new HashMap<Integer, Andar>();
 	private int lastNumAndares = 0;
 	
+	private Predio() {
+		
+	}
+	
 	public static Predio getInstance() {
 		if (instance == null) {
 			instance = new Predio();

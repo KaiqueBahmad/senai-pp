@@ -5,212 +5,161 @@ import java.awt.*;
 import java.nio.file.Paths;
 import java.util.Vector;
 
-import classes.NewMessagesAdapter;
-import classes.persistence.MessageBox;
-import classes.persistence.Mensagem;
-import classes.request.CSVRequest;
-import classes.request.FileEnterSeparatedRequest;
-import classes.request.ListRequest;
-
 public class Tela extends JFrame {
-    private JTextArea messageDisplay;
-    private JTextField inputField;
-    private JComboBox<String> inputTypeSelector;
-    private JTextField delimiterField;
-    private MessageBox messageBox;
-    private NewMessagesAdapter adapter;
-    private DefaultListModel<String> listModel;
-    private JList<String> itemList;
-    private JPanel listPanel;
-    private JPanel csvPanel;
-    private JPanel filePanel;
-
+    private JTextArea areaMensagens;
+    private JTextField campoEntrada;
+    private JComboBox<String> seletorTipo;
+    private JTextField campoDelimitador;
+    private Vector<String> mensagens;
+    private DefaultListModel<String> modeloLista;
+    private JList<String> listaItens;
+    
     public Tela() {
-        messageBox = new MessageBox();
-        adapter = new NewMessagesAdapter();
-        
+        mensagens = new Vector<>();
         setTitle("Sistema de Mensagens");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(800, 500);
         setLayout(new BorderLayout());
-
-        createDisplayArea();
-        createInputArea();
+        
+        areaMensagens = new JTextArea();
+        areaMensagens.setEditable(false);
+        add(new JScrollPane(areaMensagens), BorderLayout.CENTER);
+        
+        JPanel painelEntrada = new JPanel(new BorderLayout());
+        String[] tiposEntrada = {"Lista", "CSV", "Arquivo"};
+        seletorTipo = new JComboBox<>(tiposEntrada);
+        
+        JPanel painelSeletor = new JPanel();
+        painelSeletor.add(new JLabel("Tipo de entrada:"));
+        painelSeletor.add(seletorTipo);
+        
+        JPanel painelCartoes = new JPanel(new CardLayout());
+        
+        modeloLista = new DefaultListModel<>();
+        listaItens = new JList<>(modeloLista);
+        campoEntrada = new JTextField();
+        JButton botaoAdicionar = new JButton("Adicionar");
+        JButton botaoRemover = new JButton("Remover");
+        JButton botaoEnviarLista = new JButton("Enviar Lista");
+        
+        JPanel painelLista = new JPanel(new BorderLayout());
+        JPanel painelControle = new JPanel(new BorderLayout());
+        JPanel painelBotoes = new JPanel(new FlowLayout());
+        painelBotoes.add(botaoAdicionar);
+        painelBotoes.add(botaoRemover);
+        painelBotoes.add(botaoEnviarLista);
+        painelControle.add(campoEntrada, BorderLayout.CENTER);
+        painelControle.add(painelBotoes, BorderLayout.EAST);
+        painelLista.add(new JScrollPane(listaItens), BorderLayout.CENTER);
+        painelLista.add(painelControle, BorderLayout.SOUTH);
+        
+        JPanel painelCSV = new JPanel(new BorderLayout());
+        campoDelimitador = new JTextField(",", 3);
+        JPanel painelDelimitador = new JPanel();
+        painelDelimitador.add(new JLabel("Delimitador:"));
+        painelDelimitador.add(campoDelimitador);
+        JTextField entradaCSV = new JTextField();
+        JButton botaoEnviarCSV = new JButton("Enviar CSV");
+        JPanel painelEntradaCSV = new JPanel(new BorderLayout());
+        painelEntradaCSV.add(entradaCSV, BorderLayout.CENTER);
+        painelEntradaCSV.add(botaoEnviarCSV, BorderLayout.EAST);
+        painelCSV.add(painelDelimitador, BorderLayout.NORTH);
+        painelCSV.add(painelEntradaCSV, BorderLayout.SOUTH);
+        
+        JPanel painelArquivo = new JPanel(new BorderLayout());
+        JTextField campoCaminho = new JTextField();
+        campoCaminho.setEditable(false);
+        JButton botaoEscolher = new JButton("Escolher Arquivo");
+        JButton botaoEnviarArquivo = new JButton("Enviar Arquivo");
+        JPanel painelBotoesArquivo = new JPanel();
+        painelBotoesArquivo.add(botaoEscolher);
+        painelBotoesArquivo.add(botaoEnviarArquivo);
+        painelArquivo.add(campoCaminho, BorderLayout.CENTER);
+        painelArquivo.add(painelBotoesArquivo, BorderLayout.EAST);
+        
+        painelCartoes.add(painelLista, "Lista");
+        painelCartoes.add(painelCSV, "CSV");
+        painelCartoes.add(painelArquivo, "Arquivo");
+        
+        painelEntrada.add(painelSeletor, BorderLayout.NORTH);
+        painelEntrada.add(painelCartoes, BorderLayout.CENTER);
+        add(painelEntrada, BorderLayout.SOUTH);
+        
+        botaoAdicionar.addActionListener(e -> {
+            String texto = campoEntrada.getText().trim();
+            if (!texto.isEmpty()) {
+                modeloLista.addElement(texto);
+                campoEntrada.setText("");
+            }
+        });
+        
+        botaoRemover.addActionListener(e -> {
+            int indice = listaItens.getSelectedIndex();
+            if (indice != -1) modeloLista.remove(indice);
+        });
+        
+        botaoEnviarLista.addActionListener(e -> {
+            if (modeloLista.getSize() > 0) {
+                for (int i = 0; i < modeloLista.getSize(); i++) {
+                    mensagens.add(modeloLista.getElementAt(i));
+                }
+                atualizarExibicao();
+                modeloLista.clear();
+            }
+        });
+        
+        botaoEnviarCSV.addActionListener(e -> {
+            String entrada = entradaCSV.getText().trim();
+            if (!entrada.isEmpty()) {
+                String[] valores = entrada.split(campoDelimitador.getText());
+                for (String valor : valores) {
+                    mensagens.add(valor.trim());
+                }
+                atualizarExibicao();
+                entradaCSV.setText("");
+            }
+        });
+        
+        botaoEscolher.addActionListener(e -> {
+            JFileChooser seletor = new JFileChooser();
+            if (seletor.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+                campoCaminho.setText(seletor.getSelectedFile().getAbsolutePath());
+            }
+        });
+        
+        botaoEnviarArquivo.addActionListener(e -> {
+            if (!campoCaminho.getText().isEmpty()) {
+                try {
+                    String conteudo = new String(java.nio.file.Files.readAllBytes(Paths.get(campoCaminho.getText())));
+                    String[] linhas = conteudo.split("\n");
+                    for (String linha : linhas) {
+                        mensagens.add(linha.trim());
+                    }
+                    atualizarExibicao();
+                    campoCaminho.setText("");
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, "Erro ao ler arquivo: " + ex.getMessage());
+                }
+            }
+        });
+        
+        seletorTipo.addActionListener(e -> {
+            CardLayout cl = (CardLayout) painelCartoes.getLayout();
+            cl.show(painelCartoes, (String) seletorTipo.getSelectedItem());
+        });
         
         setLocationRelativeTo(null);
         setVisible(true);
     }
-
-    private void createDisplayArea() {
-        messageDisplay = new JTextArea();
-        messageDisplay.setEditable(false);
-        JScrollPane scrollPane = new JScrollPane(messageDisplay);
-        add(scrollPane, BorderLayout.CENTER);
-    }
-
-    private void createInputArea() {
-        JPanel inputPanel = new JPanel(new BorderLayout());
-
-        String[] inputTypes = {"Lista", "CSV", "Arquivo"};
-        inputTypeSelector = new JComboBox<>(inputTypes);
-        
-        JPanel selectorPanel = new JPanel();
-        selectorPanel.add(new JLabel("Tipo de entrada:"));
-        selectorPanel.add(inputTypeSelector);
-
-        createListPanel();
-        createCSVPanel();
-        createFilePanel();
-        
-        JPanel cardPanel = new JPanel(new CardLayout());
-        cardPanel.add(listPanel, "Lista");
-        cardPanel.add(csvPanel, "CSV");
-        cardPanel.add(filePanel, "Arquivo");
-        
-        inputPanel.add(selectorPanel, BorderLayout.NORTH);
-        inputPanel.add(cardPanel, BorderLayout.CENTER);
-        
-        add(inputPanel, BorderLayout.SOUTH);
-
-        inputTypeSelector.addActionListener(e -> {
-            CardLayout cl = (CardLayout) cardPanel.getLayout();
-            cl.show(cardPanel, (String) inputTypeSelector.getSelectedItem());
-        });
-    }
-
-    private void createListPanel() {
-        listPanel = new JPanel(new BorderLayout());
-        listModel = new DefaultListModel<>();
-        itemList = new JList<>(listModel);
-        JScrollPane listScroller = new JScrollPane(itemList);
-        
-        JPanel inputControlPanel = new JPanel(new BorderLayout());
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-        
-        inputField = new JTextField();
-        JButton addButton = new JButton("Adicionar");
-        JButton removeButton = new JButton("Remover");
-        JButton submitListButton = new JButton("Enviar Lista");
-        
-        buttonPanel.add(addButton);
-        buttonPanel.add(removeButton);
-        buttonPanel.add(submitListButton);
-        
-        inputControlPanel.add(inputField, BorderLayout.CENTER);
-        inputControlPanel.add(buttonPanel, BorderLayout.EAST);
-        
-        listPanel.add(listScroller, BorderLayout.CENTER);
-        listPanel.add(inputControlPanel, BorderLayout.SOUTH);
-
-        addButton.addActionListener(e -> {
-            String text = inputField.getText().trim();
-            if (!text.isEmpty()) {
-                listModel.addElement(text);
-                inputField.setText("");
-            }
-        });
-
-        removeButton.addActionListener(e -> {
-            int selectedIndex = itemList.getSelectedIndex();
-            if (selectedIndex != -1) {
-                listModel.remove(selectedIndex);
-            }
-        });
-
-        submitListButton.addActionListener(e -> {
-            if (listModel.getSize() > 0) {
-                Vector<String> messages = new Vector<>();
-                for (int i = 0; i < listModel.getSize(); i++) {
-                    messages.add(listModel.getElementAt(i));
-                }
-                
-                ListRequest listRequest = new ListRequest();
-                listRequest.setMensagens(messages);
-                java.util.List<Mensagem> newMessages = adapter.readMessages(listRequest);
-                
-                messageBox.getMensagens().addAll(newMessages);
-                updateDisplay();
-                listModel.clear();
-            }
-        });
-    }
-
-    private void createCSVPanel() {
-        csvPanel = new JPanel(new BorderLayout());
-        
-        JPanel delimiterPanel = new JPanel();
-        delimiterField = new JTextField(",", 3);
-        delimiterPanel.add(new JLabel("Delimitador:"));
-        delimiterPanel.add(delimiterField);
-        
-        JTextField csvInput = new JTextField();
-        JButton submitCSVButton = new JButton("Enviar CSV");
-        
-        JPanel inputPanel = new JPanel(new BorderLayout());
-        inputPanel.add(csvInput, BorderLayout.CENTER);
-        inputPanel.add(submitCSVButton, BorderLayout.EAST);
-        
-        csvPanel.add(delimiterPanel, BorderLayout.NORTH);
-        csvPanel.add(inputPanel, BorderLayout.SOUTH);
-        
-        submitCSVButton.addActionListener(e -> {
-            String input = csvInput.getText().trim();
-            if (!input.isEmpty()) {
-                CSVRequest csvRequest = new CSVRequest();
-                csvRequest.setContent(input);
-                csvRequest.setDelimiter(delimiterField.getText());
-                java.util.List<Mensagem> newMessages = adapter.readMessages(csvRequest);
-                messageBox.getMensagens().addAll(newMessages);
-                updateDisplay();
-                csvInput.setText("");
-            }
-        });
-    }
-
-    private void createFilePanel() {
-        filePanel = new JPanel(new BorderLayout());
-        
-        JTextField filePathField = new JTextField();
-        filePathField.setEditable(false);
-        JButton chooseFileButton = new JButton("Escolher Arquivo");
-        JButton submitFileButton = new JButton("Enviar Arquivo");
-        
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.add(chooseFileButton);
-        buttonPanel.add(submitFileButton);
-        
-        filePanel.add(filePathField, BorderLayout.CENTER);
-        filePanel.add(buttonPanel, BorderLayout.EAST);
-        
-        chooseFileButton.addActionListener(e -> {
-            JFileChooser fileChooser = new JFileChooser();
-            int result = fileChooser.showOpenDialog(this);
-            if (result == JFileChooser.APPROVE_OPTION) {
-                filePathField.setText(fileChooser.getSelectedFile().getAbsolutePath());
-            }
-        });
-        
-        submitFileButton.addActionListener(e -> {
-            String path = filePathField.getText();
-            if (!path.isEmpty()) {
-                FileEnterSeparatedRequest fileRequest = new FileEnterSeparatedRequest();
-                fileRequest.setPath(Paths.get(path));
-                java.util.List<Mensagem> newMessages = adapter.readMessages(fileRequest);
-                messageBox.getMensagens().addAll(newMessages);
-                updateDisplay();
-                filePathField.setText("");
-            }
-        });
-    }
-
-    private void updateDisplay() {
-        StringBuilder display = new StringBuilder();
-        for (Mensagem msg : messageBox.getMensagens()) {
-            display.append(msg.getConteudo()).append("\n");
+    
+    private void atualizarExibicao() {
+        StringBuilder exibicao = new StringBuilder();
+        for (String msg : mensagens) {
+            exibicao.append(msg).append("\n");
         }
-        messageDisplay.setText(display.toString());
+        areaMensagens.setText(exibicao.toString());
     }
-
+    
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new Tela());
     }
