@@ -10,6 +10,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import classes.persistence.Mensagem;
+import classes.persistence.Prioridade;
 import classes.request.CSVRequest;
 import classes.request.FileEnterSeparatedRequest;
 import classes.request.ListRequest;
@@ -27,6 +28,8 @@ public class NewMessagesAdapter {
 	
 	public List<Mensagem> readMessages(CSVRequest csvRequest) {
 		String raw = csvRequest.getContent();
+		
+		
 		List<Mensagem> mensagens = new LinkedList<Mensagem>();
 		for (String msg: raw.split(csvRequest.getDelimiter())) {
 			Mensagem mensagem = new Mensagem();
@@ -64,7 +67,6 @@ public class NewMessagesAdapter {
 		req.setDelimiter(",");
 		NewMessagesAdapter adapter = new NewMessagesAdapter();
 		adapter.readMessages(req);
-		
 	}
 	
 	

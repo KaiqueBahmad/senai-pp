@@ -1,25 +1,40 @@
 package Tela;
 
 import javax.swing.*;
+
+import classes.NewMessagesAdapter;
+import classes.persistence.Mensagem;
+import classes.persistence.MessageBox;
+import classes.request.CSVRequest;
+import classes.request.FileEnterSeparatedRequest;
+import classes.request.ListRequest;
+
 import java.awt.*;
 import java.nio.file.Paths;
+import java.util.LinkedList;
 import java.util.Vector;
 
 public class Tela extends JFrame {
-    private JTextArea areaMensagens;
+	private JTextArea areaMensagens;
     private JTextField campoEntrada;
     private JComboBox<String> seletorTipo;
     private JTextField campoDelimitador;
-    private Vector<String> mensagens;
+    private MessageBox messageBox;
     private DefaultListModel<String> modeloLista;
     private JList<String> listaItens;
+    private NewMessagesAdapter adapter;
     
     public Tela() {
-        mensagens = new Vector<>();
-        setTitle("Sistema de Mensagens");
+    	messageBox = new MessageBox();
+        adapter = new NewMessagesAdapter();
+        
+        setTitle("Gerenciador de Atividades");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(800, 500);
         setLayout(new BorderLayout());
+        
+        JLabel aviso = new JLabel("Para definir a prioridade use !1 para baixa, !2 média, !3 alta. No final da mensagem", SwingConstants.CENTER);
+        add(aviso, BorderLayout.NORTH);
         
         areaMensagens = new JTextArea();
         areaMensagens.setEditable(false);
@@ -33,20 +48,24 @@ public class Tela extends JFrame {
         painelSeletor.add(new JLabel("Tipo de entrada:"));
         painelSeletor.add(seletorTipo);
         
+        JPanel painelTipoEntrada = new JPanel();
+        painelTipoEntrada.add(new JLabel("Tipo de entrada:"));
+        painelTipoEntrada.add(seletorTipo);
+
+        painelSeletor.add(painelTipoEntrada);
+        
         JPanel painelCartoes = new JPanel(new CardLayout());
         
         modeloLista = new DefaultListModel<>();
         listaItens = new JList<>(modeloLista);
         campoEntrada = new JTextField();
         JButton botaoAdicionar = new JButton("Adicionar");
-        JButton botaoRemover = new JButton("Remover");
         JButton botaoEnviarLista = new JButton("Enviar Lista");
         
         JPanel painelLista = new JPanel(new BorderLayout());
         JPanel painelControle = new JPanel(new BorderLayout());
         JPanel painelBotoes = new JPanel(new FlowLayout());
         painelBotoes.add(botaoAdicionar);
-        painelBotoes.add(botaoRemover);
         painelBotoes.add(botaoEnviarLista);
         painelControle.add(campoEntrada, BorderLayout.CENTER);
         painelControle.add(painelBotoes, BorderLayout.EAST);
@@ -61,6 +80,7 @@ public class Tela extends JFrame {
         JTextField entradaCSV = new JTextField();
         JButton botaoEnviarCSV = new JButton("Enviar CSV");
         JPanel painelEntradaCSV = new JPanel(new BorderLayout());
+        
         painelEntradaCSV.add(entradaCSV, BorderLayout.CENTER);
         painelEntradaCSV.add(botaoEnviarCSV, BorderLayout.EAST);
         painelCSV.add(painelDelimitador, BorderLayout.NORTH);
@@ -93,16 +113,16 @@ public class Tela extends JFrame {
             }
         });
         
-        botaoRemover.addActionListener(e -> {
-            int indice = listaItens.getSelectedIndex();
-            if (indice != -1) modeloLista.remove(indice);
-        });
-        
         botaoEnviarLista.addActionListener(e -> {
             if (modeloLista.getSize() > 0) {
+                ListRequest listRequest = new ListRequest();
+                java.util.List<String> msgs = new LinkedList<>();
                 for (int i = 0; i < modeloLista.getSize(); i++) {
-                    mensagens.add(modeloLista.getElementAt(i));
+                    msgs.add(modeloLista.getElementAt(i));
                 }
+                listRequest.setMensagens(msgs);
+                java.util.List<Mensagem> mensagens = adapter.readMessages(listRequest);
+                messageBox.getMensagens().addAll(mensagens);
                 atualizarExibicao();
                 modeloLista.clear();
             }
@@ -111,30 +131,24 @@ public class Tela extends JFrame {
         botaoEnviarCSV.addActionListener(e -> {
             String entrada = entradaCSV.getText().trim();
             if (!entrada.isEmpty()) {
-                String[] valores = entrada.split(campoDelimitador.getText());
-                for (String valor : valores) {
-                    mensagens.add(valor.trim());
-                }
+                CSVRequest
+                csvRequest = new CSVRequest();
+                csvRequest.setContent(entrada);
+                csvRequest.setDelimiter(campoDelimitador.getText());
+                java.util.List<Mensagem> mensagens = adapter.readMessages(csvRequest);
+                messageBox.getMensagens().addAll(mensagens);
                 atualizarExibicao();
                 entradaCSV.setText("");
-            }
-        });
-        
-        botaoEscolher.addActionListener(e -> {
-            JFileChooser seletor = new JFileChooser();
-            if (seletor.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-                campoCaminho.setText(seletor.getSelectedFile().getAbsolutePath());
             }
         });
         
         botaoEnviarArquivo.addActionListener(e -> {
             if (!campoCaminho.getText().isEmpty()) {
                 try {
-                    String conteudo = new String(java.nio.file.Files.readAllBytes(Paths.get(campoCaminho.getText())));
-                    String[] linhas = conteudo.split("\n");
-                    for (String linha : linhas) {
-                        mensagens.add(linha.trim());
-                    }
+                    FileEnterSeparatedRequest fileRequest = new FileEnterSeparatedRequest();
+                    fileRequest.setPath(Paths.get(campoCaminho.getText()));
+                    java.util.List<Mensagem> mensagens = adapter.readMessages(fileRequest);
+                    messageBox.getMensagens().addAll(mensagens);
                     atualizarExibicao();
                     campoCaminho.setText("");
                 } catch (Exception ex) {
@@ -142,7 +156,6 @@ public class Tela extends JFrame {
                 }
             }
         });
-        
         seletorTipo.addActionListener(e -> {
             CardLayout cl = (CardLayout) painelCartoes.getLayout();
             cl.show(painelCartoes, (String) seletorTipo.getSelectedItem());
@@ -154,12 +167,16 @@ public class Tela extends JFrame {
     
     private void atualizarExibicao() {
         StringBuilder exibicao = new StringBuilder();
-        for (String msg : mensagens) {
-            exibicao.append(msg).append("\n");
+        for (Mensagem msg : messageBox.getMensagens()) {
+            String prioridadeText = switch (msg.getPrioridade()) {
+                case ALTA -> "[ALTA] ";
+                case MEDIA -> "[MÉDIA] ";
+                case BAIXA -> "[BAIXA] ";
+            };
+            exibicao.append(prioridadeText).append(msg.getConteudo()).append("\n");
         }
         areaMensagens.setText(exibicao.toString());
     }
-    
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new Tela());
     }
