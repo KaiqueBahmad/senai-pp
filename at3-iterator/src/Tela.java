@@ -65,7 +65,6 @@ public class Tela extends JFrame {
         put("HashMap", HashMap.class);
         put("TreeSet", TreeSet.class);
         put("PriorityQueue", PriorityQueue.class);
-        put("ConcurrentSkipListSet", ConcurrentSkipListSet.class);
         put("ArrayDeque", ArrayDeque.class);
     }};
 
@@ -73,7 +72,6 @@ public class Tela extends JFrame {
         put(HashMap.class, new LeitorHashMap());
         put(TreeSet.class, new LeitorTreeSet());
         put(PriorityQueue.class, new LeitorPriorityQueue());
-        put(ConcurrentSkipListSet.class, new LeitorConcurrentSkipList());
         put(ArrayDeque.class, new LeitorArrayDeque());
     }};
     
