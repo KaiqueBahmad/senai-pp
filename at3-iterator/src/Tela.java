@@ -5,8 +5,8 @@ import entidade.Piloto;
 import leitores.Leitor;
 import leitores.LeitorArrayDeque;
 import leitores.LeitorBruto;
-import leitores.LeitorConcurrentSkipList;
 import leitores.LeitorHashMap;
+import leitores.LeitorLinkedHashSet;
 import leitores.LeitorPriorityQueue;
 import leitores.LeitorTreeSet;
 
@@ -17,6 +17,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -66,6 +67,7 @@ public class Tela extends JFrame {
         put("TreeSet", TreeSet.class);
         put("PriorityQueue", PriorityQueue.class);
         put("ArrayDeque", ArrayDeque.class);
+        put("LinkedHashSet", LinkedHashSet.class);
     }};
 
     private static Map<Class<?>, Leitor> LEITORES = new HashMap<Class<?>, Leitor>() {{
@@ -73,6 +75,7 @@ public class Tela extends JFrame {
         put(TreeSet.class, new LeitorTreeSet());
         put(PriorityQueue.class, new LeitorPriorityQueue());
         put(ArrayDeque.class, new LeitorArrayDeque());
+        put(LinkedHashSet.class, new LeitorLinkedHashSet());
     }};
     
 	private void carregarPilotos() {
