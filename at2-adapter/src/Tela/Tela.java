@@ -1,7 +1,6 @@
 package Tela;
 
 import javax.swing.*;
-
 import classes.NewMessagesAdapter;
 import classes.persistence.Mensagem;
 import classes.persistence.MessageBox;
@@ -15,7 +14,6 @@ import java.util.LinkedList;
 import java.util.Vector;
 
 public class Tela extends JFrame {
-	private JTextArea areaMensagens;
     private JTextField campoEntrada;
     private JComboBox<String> seletorTipo;
     private JTextField campoDelimitador;
@@ -23,9 +21,11 @@ public class Tela extends JFrame {
     private DefaultListModel<String> modeloLista;
     private JList<String> listaItens;
     private NewMessagesAdapter adapter;
+    private JPanel painelTarefas;
+    private JScrollPane scrollTarefas;
     
     public Tela() {
-    	messageBox = new MessageBox();
+        messageBox = new MessageBox();
         adapter = new NewMessagesAdapter();
         
         setTitle("Gerenciador de Atividades");
@@ -36,9 +36,10 @@ public class Tela extends JFrame {
         JLabel aviso = new JLabel("Para definir a prioridade use !1 para baixa, !2 média, !3 alta. No final da mensagem", SwingConstants.CENTER);
         add(aviso, BorderLayout.NORTH);
         
-        areaMensagens = new JTextArea();
-        areaMensagens.setEditable(false);
-        add(new JScrollPane(areaMensagens), BorderLayout.CENTER);
+        painelTarefas = new JPanel();
+        painelTarefas.setLayout(new BoxLayout(painelTarefas, BoxLayout.Y_AXIS));
+        scrollTarefas = new JScrollPane(painelTarefas);
+        add(scrollTarefas, BorderLayout.CENTER);
         
         JPanel painelEntrada = new JPanel(new BorderLayout());
         String[] tiposEntrada = {"Lista", "CSV", "Arquivo"};
@@ -131,8 +132,7 @@ public class Tela extends JFrame {
         botaoEnviarCSV.addActionListener(e -> {
             String entrada = entradaCSV.getText().trim();
             if (!entrada.isEmpty()) {
-                CSVRequest
-                csvRequest = new CSVRequest();
+                CSVRequest csvRequest = new CSVRequest();
                 csvRequest.setContent(entrada);
                 csvRequest.setDelimiter(campoDelimitador.getText());
                 java.util.List<Mensagem> mensagens = adapter.readMessages(csvRequest);
@@ -156,6 +156,15 @@ public class Tela extends JFrame {
                 }
             }
         });
+        
+        botaoEscolher.addActionListener(e -> {
+            JFileChooser fileChooser = new JFileChooser();
+            int result = fileChooser.showOpenDialog(this);
+            if (result == JFileChooser.APPROVE_OPTION) {
+                campoCaminho.setText(fileChooser.getSelectedFile().getAbsolutePath());
+            }
+        });
+        
         seletorTipo.addActionListener(e -> {
             CardLayout cl = (CardLayout) painelCartoes.getLayout();
             cl.show(painelCartoes, (String) seletorTipo.getSelectedItem());
@@ -166,17 +175,39 @@ public class Tela extends JFrame {
     }
     
     private void atualizarExibicao() {
-        StringBuilder exibicao = new StringBuilder();
+        painelTarefas.removeAll();
+        
         for (Mensagem msg : messageBox.getMensagens()) {
+            JPanel painelMensagem = new JPanel(new BorderLayout());
+            JCheckBox checkbox = new JCheckBox();
+            
+            checkbox.setSelected(msg.isConcluida());
+            
+            checkbox.addActionListener(e -> {
+                msg.setConcluida(checkbox.isSelected());
+            });
+            
             String prioridadeText = switch (msg.getPrioridade()) {
                 case ALTA -> "[ALTA] ";
                 case MEDIA -> "[MÉDIA] ";
                 case BAIXA -> "[BAIXA] ";
             };
-            exibicao.append(prioridadeText).append(msg.getConteudo()).append("\n");
+            
+            JLabel labelMensagem = new JLabel(prioridadeText + msg.getConteudo());
+            
+            painelMensagem.add(checkbox, BorderLayout.WEST);
+            painelMensagem.add(labelMensagem, BorderLayout.CENTER);
+            
+            painelMensagem.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.LIGHT_GRAY));
+            painelMensagem.setMaximumSize(new Dimension(Integer.MAX_VALUE, painelMensagem.getPreferredSize().height));
+            
+            painelTarefas.add(painelMensagem);
         }
-        areaMensagens.setText(exibicao.toString());
+        
+        painelTarefas.revalidate();
+        painelTarefas.repaint();
     }
+    
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new Tela());
     }

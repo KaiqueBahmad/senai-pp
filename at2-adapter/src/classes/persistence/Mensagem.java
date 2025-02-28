@@ -3,7 +3,15 @@ package classes.persistence;
 public class Mensagem {
 	private String conteudo;
 	private Prioridade prioridade;
-	
+	private boolean concluida = false;
+
+	public boolean isConcluida() {
+	    return concluida;
+	}
+
+	public void setConcluida(boolean concluida) {
+	    this.concluida = concluida;
+	}
 	public Prioridade getPrioridade() {
 		return prioridade;
 	}
