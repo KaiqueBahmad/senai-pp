@@ -1,6 +1,6 @@
 package classes.request;
 
-public class CSVRequest {
+public class CSVRequest implements ICSVRequest {
 	private String content;
 	private String delimiter = ",";
 

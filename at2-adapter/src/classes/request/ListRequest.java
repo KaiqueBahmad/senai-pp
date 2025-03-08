@@ -2,7 +2,7 @@ package classes.request;
 
 import java.util.List;
 
-public class ListRequest {
+public class ListRequest implements IListRequest {
 	private List<String> mensagens;
 
 	public List<String> getMensagens() {

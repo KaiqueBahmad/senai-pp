@@ -1,6 +1,6 @@
 package classes.persistence;
 
-public class Mensagem {
+public class Atividade {
 	private String conteudo;
 	private Prioridade prioridade;
 	private boolean concluida = false;

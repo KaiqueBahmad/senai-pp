@@ -1,13 +1,18 @@
 package Tela;
 
 import javax.swing.*;
-import classes.NewMessagesAdapter;
-import classes.persistence.Mensagem;
-import classes.persistence.MessageBox;
+
+import classes.adapter.ListRequestAdapter;
+import classes.adapter.CSVRequestAdapter;
+import classes.adapter.FileRequestAdapter;
+
+import classes.persistence.Atividade;
+import classes.persistence.AtividadeBox;
+import classes.persistence.NewMessageRequest;
 import classes.request.CSVRequest;
 import classes.request.FileEnterSeparatedRequest;
 import classes.request.ListRequest;
-
+import java.util.List;
 import java.awt.*;
 import java.nio.file.Paths;
 import java.util.LinkedList;
@@ -17,17 +22,16 @@ public class Tela extends JFrame {
     private JTextField campoEntrada;
     private JComboBox<String> seletorTipo;
     private JTextField campoDelimitador;
-    private MessageBox messageBox;
+    private AtividadeBox atividadeBox;
+    
     private DefaultListModel<String> modeloLista;
     private JList<String> listaItens;
-    private NewMessagesAdapter adapter;
+    private ListRequestAdapter adapter;
     private JPanel painelTarefas;
     private JScrollPane scrollTarefas;
     
     public Tela() {
-        messageBox = new MessageBox();
-        adapter = new NewMessagesAdapter();
-        
+        atividadeBox = new AtividadeBox();
         setTitle("Gerenciador de Atividades");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(800, 500);
@@ -117,13 +121,16 @@ public class Tela extends JFrame {
         botaoEnviarLista.addActionListener(e -> {
             if (modeloLista.getSize() > 0) {
                 ListRequest listRequest = new ListRequest();
-                java.util.List<String> msgs = new LinkedList<>();
+                List<String> msgs = new LinkedList<>();
                 for (int i = 0; i < modeloLista.getSize(); i++) {
                     msgs.add(modeloLista.getElementAt(i));
                 }
                 listRequest.setMensagens(msgs);
-                java.util.List<Mensagem> mensagens = adapter.readMessages(listRequest);
-                messageBox.getMensagens().addAll(mensagens);
+
+                NewMessageRequest request = new ListRequestAdapter(listRequest);
+            	System.out.println(request.getAtividades().size());
+
+                atividadeBox.addMensagens(request);
                 atualizarExibicao();
                 modeloLista.clear();
             }
@@ -135,8 +142,10 @@ public class Tela extends JFrame {
                 CSVRequest csvRequest = new CSVRequest();
                 csvRequest.setContent(entrada);
                 csvRequest.setDelimiter(campoDelimitador.getText());
-                java.util.List<Mensagem> mensagens = adapter.readMessages(csvRequest);
-                messageBox.getMensagens().addAll(mensagens);
+                
+            	NewMessageRequest request = new CSVRequestAdapter(csvRequest);
+                atividadeBox.addMensagens(request);
+                
                 atualizarExibicao();
                 entradaCSV.setText("");
             }
@@ -147,8 +156,10 @@ public class Tela extends JFrame {
                 try {
                     FileEnterSeparatedRequest fileRequest = new FileEnterSeparatedRequest();
                     fileRequest.setPath(Paths.get(campoCaminho.getText()));
-                    java.util.List<Mensagem> mensagens = adapter.readMessages(fileRequest);
-                    messageBox.getMensagens().addAll(mensagens);
+                    
+                    NewMessageRequest request = new FileRequestAdapter(fileRequest);
+                    atividadeBox.addMensagens(request);
+                    
                     atualizarExibicao();
                     campoCaminho.setText("");
                 } catch (Exception ex) {
@@ -177,7 +188,7 @@ public class Tela extends JFrame {
     private void atualizarExibicao() {
         painelTarefas.removeAll();
         
-        for (Mensagem msg : messageBox.getMensagens()) {
+        for (Atividade msg : atividadeBox.getMensagens()) {
             JPanel painelMensagem = new JPanel(new BorderLayout());
             JCheckBox checkbox = new JCheckBox();
             
@@ -203,7 +214,6 @@ public class Tela extends JFrame {
             
             painelTarefas.add(painelMensagem);
         }
-        
         painelTarefas.revalidate();
         painelTarefas.repaint();
     }

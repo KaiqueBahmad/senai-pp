@@ -2,7 +2,7 @@ package classes.request;
 
 import java.nio.file.Path;
 
-public class FileEnterSeparatedRequest {
+public class FileEnterSeparatedRequest implements IFileEnterSeparatedRequest {
 	private Path path;
 
 	public Path getPath() {
