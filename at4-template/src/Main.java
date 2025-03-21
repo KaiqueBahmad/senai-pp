@@ -1,12 +1,14 @@
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Vector;
-
+import sorter.*;
 public class Main {
     static JFrame frame;
     static JButton btnOrdenar;
@@ -97,8 +99,30 @@ public class Main {
     }
 
     static void ordenarAlunos(String opcaoOrdenacao) {
-        Collections.sort(listaAlunos, Ordenadores.getComparator(opcaoOrdenacao));
+        listaAlunos = getSorter(opcaoOrdenacao).sort(listaAlunos);
     }
+    
+    private static Sorter getSorter(String opcao) {
+        switch (opcao) {
+            case "Por Nome": 
+                return new SorterPorNome();
+            case "Por Sobrenome": 
+                return new SorterPorSobrenome();
+            case "Por Situação e Nome": 
+                return new SorterPorSituacaoENome();
+            case "Por Curso e Nome": 
+                return new SorterPorCursoENome();
+            case "Por Ênfase e Nome": 
+                return new SorterPorEnfaseENome();
+            case "Por Curso, Ênfase e Nome": 
+                return new SorterPorCursoEnfaseENome();
+            case "Por Ênfase, Curso e Nome": 
+                return new SorterPorEnfaseCursoENome();
+            default: 
+                return null;
+        }
+    }
+    
 
     static void atualizarTabela() {
         modeloTabela.setRowCount(0); // isso aqui é pra limpar a lista e nao ficar readicionando

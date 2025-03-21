@@ -1,13 +1,14 @@
+package sorter;
 import java.util.Vector;
 
-class Aluno {
-        private String curso;
-        private String situacao;
-        private String enfase;
+public class Aluno {
+        String curso;
+        String situacao;
+        String enfase;
         
-        private String sobrenome;
-        private String primeiroNome;
-        private String nomesMeio;
+        String sobrenome;
+        String primeiroNome;
+        String nomesMeio;
         
         
         public Aluno(String[] campos) {
